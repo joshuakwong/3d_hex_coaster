@@ -100,3 +100,41 @@ module mac_pro_hex_coaster() {
 
 // Render the coaster
 mac_pro_hex_coaster();
+
+// --------------------------------------------------------------------
+// Viewport Animation Control
+// --------------------------------------------------------------------
+// Target and framing
+$vpt = [0, 0, 0];
+$vpd = 230;
+$vpf = 35; // Field of view (degrees)
+
+// Simplified 3-stage viewport sequence:
+// Total angular travel = 405 + 855 + 180 = 1440°
+//   Stage 1: [0,  0, 0]   -> [405, 0, 45]   (x flips 360° then blends z during last 45°)
+//   Stage 2: [45, 0, 45]  -> [75,  0, 900]  (continuous climb 45°->75° on x, 45°->900° on z)
+//   Stage 3: [75, 0, 900] -> [0,   0, 1080] (smooth return to flat: 1080 ≡ 0)
+
+t1 = 405 / 1440;
+t2 = t1 + 855 / 1440;
+// Stage 3 runs t2 to 1.0
+
+// Threshold inside Stage 1 where full 360° flip ends and blend begins (360/405 ≈ 0.889)
+blend_thresh = 360 / 405;
+
+$vpr = ($t < t1) ?
+    let(u = $t / t1)
+    (u < blend_thresh) ?
+        // Pure flip: 0° -> 360° on x, 0° on z
+        [360 * (u / blend_thresh), 0, 0] :
+        // Blend zone: 360° -> 405° on x, 0° -> 45° on z
+        let(v = (u - blend_thresh) / (1 - blend_thresh))
+        [360 + 45 * v, 0, 45 * v] :
+    ($t < t2) ?
+    // Stage 2: smooth continuous pitch climb 45° -> 75° and yaw rotation 45° -> 900°
+    let(u = ($t - t1) / (t2 - t1))
+    [45 + (75 - 45) * u, 0, 45 + (900 - 45) * u] :
+    // Stage 3: return from [75, 0, 900] to [0, 0, 1080] (1080° ≡ 0°)
+    let(u = ($t - t2) / (1 - t2))
+    [75 * (1 - u), 0, 900 + 180 * u];
+
