@@ -2,6 +2,8 @@
 
 A fully parametric OpenSCAD script for generating a hexagonal coaster featuring the 3D "cheese grater" lattice pattern inspired by the 2019 Mac Pro.
 
+![preview](./hex_coaster.gif)
+
 ---
 
 ## Features
